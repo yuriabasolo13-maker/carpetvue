@@ -49,7 +49,7 @@
   </style>
 
   <!-- Fabric.js (jsDelivr) -->
-  <script src="https://cdn.jsdelivr.net/npm/fabric@4.6.0/dist/fabric.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -225,11 +225,17 @@
     });
 
     // Download preview (temporary hide placeholder and convert)
-    document.getElementById('downloadBtn').addEventListener('click', ()=>{
-      // temporarily hide the placeholder so exported image looks clean
-      const prevVisible = placeholder.visible;
-      placeholder.visible = false;
-      canvas.renderAll();
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+    const target = document.getElementById("previewArea"); // your preview div
+
+    html2canvas(target, { useCORS: true }).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "carpetvue.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
+});
+
       try {
         const dataURL = canvas.toDataURL({ format: 'png', quality: 0.95 });
         downloadURI(dataURL, 'carpetvue_preview.png');
