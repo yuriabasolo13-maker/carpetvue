@@ -1,389 +1,191 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CarpetVue — Instant Carpet Visualizer</title>
-  <meta name="description" content="Free tool: upload any carpet photo and see it instantly in real rooms. Drag, scale, rotate, download."/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CarpetVue — Visualizer</title>
+  <meta name="description" content="CarpetVue - quick carpet visualizer. Upload carpet + place it inside room photos, then download preview.">
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+  <!-- Fabric.js -->
+  <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+
   <style>
     :root{
-      --bg:#050d1c; --panel:#0d1628; --accent:#3b82f6; --muted:#94a3b8;
-      --card:#0f1a30; --radius:16px; --glow:rgba(59,130,246,0.3);
+      --bg:#071226; --card:#0b1220; --muted:#9aa8bf; --accent:#3b82f6;
+      --radius:12px; --maxw:1100px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      color: #e8f1ff;
     }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Inter',system-ui,-apple-system,sans-serif;
-      background:linear-gradient(135deg,#050d1c 0%,#0f1b33 100%);
-      color:#e2e8f0;
-      min-height:100vh;
-      padding:20px;
-    }
-    .app{
-      max-width:1340px;
-      margin:0 auto;
-      display:grid;
-      grid-template-columns:1fr 340px;
-      gap:24px;
-    }
-    header{
-      grid-column:1/-1;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:16px;
-      margin-bottom:12px;
-    }
-    .brand{display:flex;align-items:center;gap:14px}
-    .logo{
-      width:56px;height:56px;border-radius:14px;
-      background:linear-gradient(135deg,var(--accent),#8b5cf6);
-      display:flex;align-items:center;justify-content:center;
-      font-weight:900;font-size:26px;color:white;box-shadow:0 8px 25px rgba(59,130,246,0.4);
-    }
-    h1{font-size:22px;font-weight:700}
-    .subtitle{color:var(--muted);font-size:15px;margin-top:4px}
-    .btn{
-      padding:11px 20px;
-      border-radius:12px;
-      font-weight:600;
-      cursor:pointer;
-      transition:all .25s;
-      border:none;
-      background:var(--accent);
-      color:white;
-      box-shadow:0 6px 20px rgba(59,130,246,0.3);
-    }
-    .btn:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(59,130,246,0.4)}
-    .btn.ghost{
-      background:transparent;
-      border:1px solid rgba(255,255,255,0.1);
-      color:var(--muted);
-    }
-    .panel{
-      background:var(--panel);
-      border-radius:var(--radius);
-      padding:20px;
-      border:1px solid rgba(255,255,255,0.05);
-      box-shadow:0 10px 40px rgba(0,0,0,0.6);
-      backdrop-filter:blur(12px);
-    }
-    .canvas-container{
-      position:relative;
-      border-radius:14px;
-      overflow:hidden;
-      background:#0a1220;
-      box-shadow:0 10px 40px rgba(0,0,0,0.7);
-    }
-    canvas{
-      display:block;
-      background:#0f172a;
-      border-radius:12px;
-      touch-action:none;
-    }
-    .loader{
-      position:absolute;
-      inset:0;
-      background:rgba(5,13,28,0.85);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      border-radius:14px;
-      z-index:10;
-    }
-    .loader::after{
-      content:"";
-      width:56px;height:56px;
-      border:5px solid #1e293b;
-      border-top-color:var(--accent);
-      border-radius:50%;
-      animation:spin 1s linear infinite;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .drop-hint{
-      position:absolute;
-      bottom:24px;left:50%;
-      transform:translateX(-50%);
-      background:rgba(0,0,0,0.7);
-      padding:14px 28px;
-      border-radius:50px;
-      font-weight:600;
-      opacity:0;
-      transition:opacity .3s;
-      pointer-events:none;
-      backdrop-filter:blur(8px);
-      border:1px solid rgba(59,130,246,0.3);
-      box-shadow:0 8px 25px rgba(0,0,0,0.5);
-    }
-    .controls{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top:16px;
-    }
-    .thumbs{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:14px;
-      margin-top:12px;
-    }
-    .thumb{
-      height:110px;
-      border-radius:12px;
-      overflow:hidden;
-      cursor:pointer;
-      border:3px solid transparent;
-      transition:all .3s;
-      position:relative;
-    }
-    .thumb:hover{transform:scale(1.05);border-color:var(--accent)}
-    .thumb.active{
-      border-color:var(--accent);
-      box-shadow:0 0 0 3px var(--glow);
-    }
-    .thumb img{
-      width:100%;height:100%;object-fit:cover;
-      filter:brightness(0.94);
-    }
-    footer{
-      grid-column:1/-1;
-      text-align:center;
-      color:var(--muted);
-      margin-top:32px;
-      font-size:14px;
-    }
-    @media(max-width:1080px){
-      .app{grid-template-columns:1fr}
-      canvas{height:420px!important}
-      .thumbs{grid-template-columns:repeat(3,1fr)}
-    }
-    @media(max-width:640px){
-      canvas{height:340px!important}
-      .thumbs{grid-template-columns:1fr 1fr}
-      header{flex-direction:column;align-items:flex-start}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#06111b 0%, #061826 100%);min-height:100vh;display:flex;justify-content:center;padding:28px}
+    .wrap{width:100%;max-width:var(--maxw)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    h1{margin:0;font-size:18px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    main{display:grid;grid-template-columns:1fr 300px;gap:20px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:14px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+    .canvas-shell{display:flex;flex-direction:column;gap:10px}
+    .canvas-frame{background:linear-gradient(180deg,#07121a,#06101a);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.02)}
+    canvas{display:block;border-radius:6px;background:#0f1724; width:100%; height:520px; touch-action:none}
+
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);border:none;color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer;box-shadow:0 6px 14px rgba(59,130,246,0.12)}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .muted{color:var(--muted);font-size:13px}
+
+    .thumbs{display:flex;flex-direction:column;gap:10px}
+    .thumb{height:84px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+
+    @media (max-width:980px){
+      main{grid-template-columns:1fr}
+      canvas{height:360px}
     }
   </style>
 </head>
+
 <body>
-  <div class="app">
+  <div class="wrap">
     <header>
       <div class="brand">
         <div class="logo">CV</div>
         <div>
-          <h1>CarpetVue Visualizer</h1>
-          <div class="subtitle">Upload any carpet • place in real rooms • download instantly</div>
+          <h1>CarpetVue — Visualizer</h1>
+          <p class="lead">Upload a carpet, place it on the floor, download a realistic preview.</p>
         </div>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button id="demoBtn" class="btn ghost">Try Demo Carpet</button>
-        <button id="downloadBtn" class="btn">Download Preview</button>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="tryDemo" class="btn ghost">Try Demo</button>
+        <a class="btn" id="downloadBtn">Download</a>
       </div>
     </header>
 
-    <main class="panel">
-      <div class="canvas-container" id="canvasContainer">
-        <canvas id="roomCanvas"></canvas>
-        <div class="loader" id="loader"></div>
-        <div class="drop-hint" id="dropHint">Drop carpet image here</div>
-      </div>
-      <div class="controls">
-        <input type="file" id="uploadCarpet" accept="image/*" hidden>
-        <button id="uploadBtn" class="btn">Upload Carpet</button>
-        <button id="removeBtn" class="btn ghost">Remove Carpet</button>
-        <div style="margin-left:auto;color:var(--muted)">Drag • Scale • Rotate</div>
-      </div>
-    </main>
+    <main>
+      <div class="card canvas-shell">
+        <div class="canvas-frame card">
+          <canvas id="roomCanvas" width="1000" height="520"></canvas>
+        </div>
 
-    <aside class="panel">
-      <h3 style="margin-bottom:16px;font-size:17px">Choose a room</h3>
-      <div class="thumbs" id="thumbs">
-        <div class="thumb active" data-src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=600&q=85" alt="Living room">
-        </div>
-        <div class="thumb" data-src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=600&q=85" alt="Bedroom">
-        </div>
-        <div class="thumb" data-src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=85" alt="Modern office">
-        </div>
-        <div class="thumb" data-src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=85" alt="Cozy bedroom">
-        </div>
-        <div class="thumb" data-src="https://images.unsplash.com/photo-1618220048045-10a6dbdfc8d1?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1618220048045-10a6dbdfc8d1?auto=format&fit=crop&w=600&q=85" alt="Minimal living">
-        </div>
-        <div class="thumb" data-src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=85">
-          <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=85" alt="Luxury interior">
+        <div class="controls">
+          <input type="file" id="uploadCarpet" accept="image/*" style="display:none">
+          <button class="btn" id="uploadBtn">Upload Carpet</button>
+          <button class="btn ghost" id="resetBtn">Reset</button>
         </div>
       </div>
-      <div style="margin-top:20px;font-size:14px;color:var(--muted)">
-        Tip: Use top-down carpet photos (PNG works best). Drag & drop works too!
-      </div>
-    </aside>
+
+      <aside class="card">
+        <div style="font-weight:700;margin-bottom:10px">Choose a room</div>
+        <div class="thumbs">
+
+          <div class="thumb" data-src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60">
+            <img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=600&q=60">
+          </div>
+
+          <div class="thumb" data-src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=1200&q=60">
+            <img src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=600&q=60">
+          </div>
+
+          <div class="thumb" data-src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=60">
+            <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=60">
+          </div>
+
+        </div>
+      </aside>
+    </main>
 
     <footer>Made with ❤️ by CarpetVue</footer>
   </div>
 
 <script>
-(() => {
-  const canvas = new fabric.Canvas('roomCanvas', {
-    preserveObjectStacking: true,
-    width: 1000,
-    height: 560
-  });
-
+(function(){
+  const canvas = new fabric.Canvas("roomCanvas", { selection: false });
   let carpet = null;
 
-  // Show loader
-  const loader = document.getElementById('loader');
-  const dropHint = document.getElementById('dropHint');
-  const canvasContainer = document.getElementById('canvasContainer');
-
-  // Load background with loader + blob fallback
-  async function loadRoom(url) {
-    loader.style.display = 'flex';
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-    document.querySelector(`[data-src="${url}"]`)?.parentElement.classList.add('active');
-
-    try {
-      const res = await fetch("https://corsproxy.io/?" + encodeURIComponent(url));
-      const blob = await res.blob();
-      const objUrl = URL.createObjectURL(blob);
-
-      fabric.Image.fromURL(objUrl, img => {
-        const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-        img.scale(scale);
-        img.set({
-          left: canvas.width / 2,
-          top: canvas.height / 2,
-          originX: 'center',
-          originY: 'center',
-          selectable: false,
-          evented: false
-        });
-        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-        setTimeout(() => URL.revokeObjectURL(objUrl), 3000);
-        loader.style.display = 'none';
-      });
-    } catch (e) {
-      loader.style.display = 'none';
-      alert("Couldn't load room image. Try another one!");
-    }
+  function setBackground(url){
+    fabric.Image.fromURL(url, img => {
+      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+      img.scale(scale);
+      img.set({ originX:"center", originY:"center", left:canvas.width/2, top:canvas.height/2, selectable:false });
+      canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+    }, { crossOrigin:"anonymous" });
   }
 
-  // Initial room
-  loadRoom("https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1600&q=85");
+  setBackground("https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60");
 
-  // Room thumbnails
-  document.querySelectorAll('.thumb').forEach(thumb => {
-    thumb.addEventListener('click', () => loadRoom(thumb.dataset.src));
+  function fitCarpet(img){
+    img.scaleToWidth(canvas.width * 0.6);
+    img.set({ left:canvas.width/2, top:canvas.height*0.70, originX:"center", originY:"center" });
+  }
+
+  // Upload Carpet
+  const uploadInput = document.getElementById("uploadCarpet");
+  document.getElementById("uploadBtn").onclick = () => uploadInput.click();
+
+  uploadInput.addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      fabric.Image.fromURL(evt.target.result, img => {
+        img.set({ selectable:true, hasControls:true, crossOrigin:"anonymous" });
+        if(carpet) canvas.remove(carpet);
+        carpet = img;
+        canvas.add(img);
+        fitCarpet(img);
+        canvas.renderAll();
+      }, { crossOrigin:"anonymous" });
+    };
+    reader.readAsDataURL(file);
   });
 
-  // Load carpet from file/objectURL (upload or drop)
-  function addCarpetFromFile(file) {
-    if (!file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
-
-    fabric.Image.fromURL(url, img => {
-      URL.revokeObjectURL(url);
-      if (carpet) canvas.remove(carpet);
+  // Try Demo
+  document.getElementById("tryDemo").onclick = () => {
+    const demo = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1200&q=60";
+    fabric.Image.fromURL(demo, img => {
+      if(carpet) canvas.remove(carpet);
       carpet = img;
-
-      img.set({
-        selectable: true,
-        hasControls: true,
-        hasBorders: true,
-        cornerStyle: 'circle',
-        cornerColor: 'rgba(59,130,246,0.9)',
-        cornerSize: 14,
-        borderColor: 'rgba(59,130,246,0.6)',
-        transparentCorners: false
-      });
-
-      const scale = Math.min(canvas.width * 0.68 / img.width, canvas.height * 0.5 / img.height);
-      img.scale(scale);
-      img.centerH();
-      img.set({ top: canvas.height * 0.72 });
-
       canvas.add(img);
-      canvas.setActiveObject(img);
+      fitCarpet(img);
       canvas.renderAll();
-    });
-  }
-
-  // Upload button
-  const uploadInput = document.getElementById('uploadCar');
-  document.getElementById('uploadBtn').onclick = () => uploadInput.click();
-  uploadInput.onchange = e => {
-    if (e.target.files[0]) addCarpetFromFile(e.target.files[0]);
+    }, { crossOrigin:"anonymous" });
   };
 
-  // Drag & Drop
-  canvasContainer.ondragover = e => {
-    e.preventDefault();
-    dropHint.style.opacity = '1';
-  };
-  canvasContainer.ondragleave = () => dropHint.style.opacity = '0';
-  canvasContainer.ondrop = e => {
-    e.preventDefault();
-    dropHint.style.opacity = '0';
-    if (e.dataTransfer.files[0]) addCarpetFromFile(e.dataTransfer.files[0]);
-  };
+  // Room thumbnails
+  document.querySelectorAll(".thumb").forEach(t => {
+    t.onclick = () => setBackground(t.dataset.src);
+  });
 
-  // Demo carpet
-  document.getElementById('demoBtn').onclick = () => {
-    const demo = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1600&q=85";
-    fabric.Image.fromURL("https://corsproxy.io/?" + encodeURIComponent(demo), img => {
-      if (carpet) canvas.remove(carpet);
-      carpet = img;
-      img.set({ selectable: true, hasControls: true });
-      const scale = canvas.width * 0.65 / img.width;
-      img.scale(scale);
-      img.centerH();
-      img.set({ top: canvas.height * 0.70 });
-      canvas.add(img);
-      canvas.setActiveObject(img);
-      canvas.renderAll();
-    });
-  };
-
-  // Remove carpet
-  document.getElementById('removeBtn').onclick = () => {
-    if (carpet) {
-      canvas.remove(carpet);
-      carpet = null;
-      canvas.renderAll();
-    }
+  // Reset carpet
+  document.getElementById("resetBtn").onclick = () => {
+    if(carpet) canvas.remove(carpet);
+    carpet = null;
+    canvas.renderAll();
   };
 
   // Download
-  document.getElementById('downloadBtn').onclick = () => {
-    const active = canvas.getActiveObject();
-    if (active) canvas.discardActiveObject();
-    canvas.renderAll();
-
-    const link = document.createElement('a');
-    link.download = `carpetvue-${Date.now()}.png`;
-    link.href = canvas.toDataURL({ format: 'png', multiplier: 2 });
-    link.click();
-
-    if (active) canvas.setActiveObject(active);
+  document.getElementById("downloadBtn").onclick = () => {
+    try{
+      const url = canvas.toDataURL({ format:"png", multiplier:2, enableRetinaScaling:true });
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "carpetvue.png";
+      a.click();
+    }catch(e){
+      alert("Export failed (CORS). Check console.");
+      console.error(e);
+    }
   };
-
-  // Responsive canvas resize
-  function resize() {
-    const rect = canvasContainer.getBoundingClientRect();
-    const newWidth = rect.width;
-    canvas.setDimensions({ width: newWidth, height: newWidth * 0.56 });
-    canvas.renderAll();
-  }
-  window.addEventListener('resize', resize);
-  setTimeout(resize, 100);
 
 })();
 </script>
+
 </body>
 </html>
