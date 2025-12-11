@@ -5,45 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CarpetVue</title>
 
-    <!-- Fabric.js (FIXED CDN) -->
+    <!-- FIXED FABRIC.JS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            background: #ffffff;
             padding: 20px;
-            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            background: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
         }
 
-        .sidebar h2 {
-            margin: 0 0 10px;
-            font-size: 22px;
-            color: #333;
+        h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
         }
 
         .btn {
-            padding: 12px;
+            padding: 12px 20px;
+            margin: 10px;
             border: none;
             background: #3b82f6;
             color: white;
             cursor: pointer;
             border-radius: 6px;
             font-size: 16px;
-            text-align: center;
         }
 
         .btn:hover {
@@ -54,50 +41,48 @@
             display: none;
         }
 
-        /* Canvas container */
-        .canvas-container-area {
-            flex: 1;
+        .canvas-box {
+            margin-top: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            background: #dedede;
         }
 
         canvas {
-            border: 2px solid #ffffff;
-            background: #ffffff;
-            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            border: 2px solid #ccc;
+            background: white;
         }
     </style>
 </head>
+
 <body>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>CarpetVue</h2>
+    <h1>CarpetVue</h1>
 
-        <button class="btn" id="uploadBtn">Upload Carpet</button>
-        <input type="file" id="uploadInput" accept="image/*">
+    <!-- Upload Button -->
+    <button class="btn" id="uploadBtn">Upload Carpet</button>
+    <input type="file" id="uploadInput" accept="image/*">
 
-        <button class="btn" id="clearBtn" style="background:#ef4444;">Clear Carpet</button>
+    <!-- Clear Button -->
+    <button class="btn" id="clearBtn" style="background:#ef4444;">Clear Carpet</button>
 
-        <button class="btn" id="downloadBtn" style="background:#10b981;">Download Result</button>
-    </div>
+    <!-- Download Button -->
+    <button class="btn" id="downloadBtn" style="background:#10b981;">Download Result</button>
 
-    <!-- CANVAS AREA -->
-    <div class="canvas-container-area">
+    <!-- Canvas Container -->
+    <div class="canvas-box">
         <canvas id="workspace" width="900" height="600"></canvas>
     </div>
 
+
 <script>
-    // Initialize Fabric
+    // Fabric.js Canvas
     const canvas = new fabric.Canvas("workspace", {
         preserveObjectStacking: true
     });
 
     let carpet = null;
 
-    // Upload Trigger
+    // Upload button triggers input
     const uploadInput = document.getElementById("uploadInput");
     document.getElementById("uploadBtn").onclick = () => uploadInput.click();
 
@@ -108,6 +93,7 @@
 
         const reader = new FileReader();
         reader.onload = evt => {
+
             fabric.Image.fromURL(evt.target.result, img => {
                 img.set({
                     selectable: true,
@@ -124,16 +110,15 @@
 
                 carpet = img;
 
-                // Auto-fit carpet
-                const maxW = canvas.width * 0.7;
-                const maxH = canvas.height * 0.5;
-
+                // Auto scale carpet
+                const maxW = canvas.width * 0.8;
+                const maxH = canvas.height * 0.6;
                 const scale = Math.min(maxW / img.width, maxH / img.height);
                 img.scale(scale);
 
                 img.set({
                     left: canvas.width / 2,
-                    top: canvas.height * 0.75,
+                    top: canvas.height * 0.65,
                     originX: 'center',
                     originY: 'center'
                 });
@@ -144,10 +129,11 @@
 
             }, { crossOrigin: "anonymous" });
         };
+
         reader.readAsDataURL(file);
     });
 
-    // Clear Button
+    // Clear carpet
     document.getElementById("clearBtn").onclick = () => {
         if (carpet) {
             canvas.remove(carpet);
@@ -156,17 +142,14 @@
         }
     };
 
-    // Download Result
+    // Download image
     document.getElementById("downloadBtn").onclick = () => {
-        const dataURL = canvas.toDataURL({
-            format: "png",
-            enableRetinaScaling: true
-        });
+        const url = canvas.toDataURL("image/png");
 
-        const link = document.createElement("a");
-        link.download = "CarpetVue_Result.png";
-        link.href = dataURL;
-        link.click();
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "CarpetVue_Result.png";
+        a.click();
     };
 </script>
 
