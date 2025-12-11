@@ -224,7 +224,7 @@
       </div>
     </aside>
 
-    <footer>Made with ❤️ by CarpetVue</footer>
+    <footer>Made with ❤️ by CarpetVue — <a href="https://github.com" style="color:var(--accent);text-decoration:none">Open Source & Free Forever</a></footer>
   </div>
 
 <script>
@@ -236,30 +236,17 @@
   });
 
   let carpet = null;
-  let originalCarpet = null;
+
+  // Show loader
   const loader = document.getElementById('loader');
   const dropHint = document.getElementById('dropHint');
   const canvasContainer = document.getElementById('canvasContainer');
 
-  const originalCanvasWidth = canvas.width;
-  const originalCanvasHeight = canvas.height;
-
-  function setCarpet(img) {
-    carpet = img;
-    originalCarpet = {
-      width: img.width,
-      height: img.height,
-      scaleX: img.scaleX,
-      scaleY: img.scaleY,
-      left: img.left,
-      top: img.top
-    };
-  }
-
+  // Load background with loader + blob fallback
   async function loadRoom(url) {
     loader.style.display = 'flex';
     document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-    document.querySelector(`[data-src="${url}"]`)?.classList.add('active');
+    document.querySelector(`[data-src="${url}"]`)?.parentElement.classList.add('active');
 
     try {
       const res = await fetch("https://corsproxy.io/?" + encodeURIComponent(url));
@@ -287,12 +274,15 @@
     }
   }
 
+  // Initial room
   loadRoom("https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1600&q=85");
 
+  // Room thumbnails
   document.querySelectorAll('.thumb').forEach(thumb => {
     thumb.addEventListener('click', () => loadRoom(thumb.dataset.src));
   });
 
+  // Load carpet from file/objectURL (upload or drop)
   function addCarpetFromFile(file) {
     if (!file.type.startsWith('image/')) return;
     const url = URL.createObjectURL(file);
@@ -300,6 +290,7 @@
     fabric.Image.fromURL(url, img => {
       URL.revokeObjectURL(url);
       if (carpet) canvas.remove(carpet);
+      carpet = img;
 
       img.set({
         selectable: true,
@@ -320,17 +311,17 @@
       canvas.add(img);
       canvas.setActiveObject(img);
       canvas.renderAll();
-
-      setCarpet(img);
     });
   }
 
-  const uploadInput = document.getElementById('uploadCarpet');
+  // Upload button
+  const uploadInput = document.getElementById('uploadCar');
   document.getElementById('uploadBtn').onclick = () => uploadInput.click();
   uploadInput.onchange = e => {
     if (e.target.files[0]) addCarpetFromFile(e.target.files[0]);
   };
 
+  // Drag & Drop
   canvasContainer.ondragover = e => {
     e.preventDefault();
     dropHint.style.opacity = '1';
@@ -342,10 +333,12 @@
     if (e.dataTransfer.files[0]) addCarpetFromFile(e.dataTransfer.files[0]);
   };
 
+  // Demo carpet
   document.getElementById('demoBtn').onclick = () => {
     const demo = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1600&q=85";
     fabric.Image.fromURL("https://corsproxy.io/?" + encodeURIComponent(demo), img => {
       if (carpet) canvas.remove(carpet);
+      carpet = img;
       img.set({ selectable: true, hasControls: true });
       const scale = canvas.width * 0.65 / img.width;
       img.scale(scale);
@@ -354,20 +347,19 @@
       canvas.add(img);
       canvas.setActiveObject(img);
       canvas.renderAll();
-
-      setCarpet(img);
     });
   };
 
+  // Remove carpet
   document.getElementById('removeBtn').onclick = () => {
     if (carpet) {
       canvas.remove(carpet);
       carpet = null;
-      originalCarpet = null;
       canvas.renderAll();
     }
   };
 
+  // Download
   document.getElementById('downloadBtn').onclick = () => {
     const active = canvas.getActiveObject();
     if (active) canvas.discardActiveObject();
@@ -381,34 +373,13 @@
     if (active) canvas.setActiveObject(active);
   };
 
+  // Responsive canvas resize
   function resize() {
     const rect = canvasContainer.getBoundingClientRect();
     const newWidth = rect.width;
-    const newHeight = newWidth * 0.56;
-
-    const scaleX = newWidth / originalCanvasWidth;
-    const scaleY = newHeight / originalCanvasHeight;
-
-    canvas.setDimensions({ width: newWidth, height: newHeight });
-
-    if (carpet && originalCarpet) {
-      carpet.scaleX = originalCarpet.scaleX * scaleX;
-      carpet.scaleY = originalCarpet.scaleY * scaleY;
-      carpet.left = originalCarpet.left * scaleX;
-      carpet.top = originalCarpet.top * scaleY;
-    }
-
-    if (canvas.backgroundImage) {
-      const bg = canvas.backgroundImage;
-      const bgScale = Math.max(newWidth / bg.width, newHeight / bg.height);
-      bg.scale(bgScale);
-      bg.left = newWidth / 2;
-      bg.top = newHeight / 2;
-    }
-
+    canvas.setDimensions({ width: newWidth, height: newWidth * 0.56 });
     canvas.renderAll();
   }
-
   window.addEventListener('resize', resize);
   setTimeout(resize, 100);
 
