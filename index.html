@@ -1,157 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarpetVue</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CarpetVue — Visualizer (Dark)</title>
 
-    <!-- FIXED FABRIC.JS CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<!-- Reliable Fabric CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
+<style>
+  :root{
+    --bg:#071026; --panel:#0b1724; --muted:#9aa8bf; --accent:#3b82f6;
+    --card:#071826; --radius:12px;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#051026,#071026);color:#e6eefc}
+  .app{max-width:1280px;margin:18px auto;padding:18px;display:grid;grid-template-columns:1fr 320px;gap:18px}
+  header{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700}
+  h1{font-size:18px;margin:0}
+  .controls-top{display:flex;gap:10px}
+  .btn{background:linear-gradient(180deg,var(--accent),#2563eb);border:none;color:white;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 6px 20px rgba(8,12,30,0.6)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+  /* canvas area */
+  .canvas-wrap{display:flex;flex-direction:column;gap:10px}
+  .canvas-stage{height:560px;border-radius:12px;padding:18px;background:linear-gradient(180deg,#071425,#06161f);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.02)}
+  canvas{border-radius:8px;background:#0b1320;max-width:100%;height:520px}
+  .bottom-actions{display:flex;gap:10px;align-items:center;margin-top:8px}
+  .muted{color:var(--muted);font-size:13px}
 
-        h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
+  /* right column */
+  .sidebar{display:flex;flex-direction:column;gap:12px}
+  .thumbs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .thumb{height:84px;border-radius:8px;overflow:hidden;position:relative;cursor:pointer;border:2px solid transparent}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.95)}
+  .thumb.active{outline:4px solid rgba(59,130,246,0.25);box-shadow:0 8px 20px rgba(14,16,30,0.6)}
+  .room-label{font-size:13px;color:var(--muted);margin-bottom:6px}
 
-        .btn {
-            padding: 12px 20px;
-            margin: 10px;
-            border: none;
-            background: #3b82f6;
-            color: white;
-            cursor: pointer;
-            border-radius: 6px;
-            font-size: 16px;
-        }
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:6px;font-size:13px}
 
-        .btn:hover {
-            background: #2563eb;
-        }
-
-        #uploadInput {
-            display: none;
-        }
-
-        .canvas-box {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        canvas {
-            border: 2px solid #ccc;
-            background: white;
-        }
-    </style>
+  @media (max-width:1100px){
+    .app{grid-template-columns:1fr}
+    canvas{height:420px}
+  }
+</style>
 </head>
-
 <body>
 
-    <h1>CarpetVue</h1>
-
-    <!-- Upload Button -->
-    <button class="btn" id="uploadBtn">Upload Carpet</button>
-    <input type="file" id="uploadInput" accept="image/*">
-
-    <!-- Clear Button -->
-    <button class="btn" id="clearBtn" style="background:#ef4444;">Clear Carpet</button>
-
-    <!-- Download Button -->
-    <button class="btn" id="downloadBtn" style="background:#10b981;">Download Result</button>
-
-    <!-- Canvas Container -->
-    <div class="canvas-box">
-        <canvas id="workspace" width="900" height="600"></canvas>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">CV</div>
+      <div>
+        <h1>CarpetVue Visualizer</h1>
+        <div class="muted">Drop your carpet on any room — instant realistic preview</div>
+      </div>
     </div>
 
+    <div class="controls-top">
+      <button id="demoBtn" class="btn ghost">Try Demo Carpet</button>
+      <button id="downloadBtn" class="btn">Download Preview</button>
+    </div>
+  </header>
+
+  <!-- Canvas / Stage -->
+  <div class="panel canvas-wrap">
+    <div class="canvas-stage panel" id="canvasStage">
+      <canvas id="roomCanvas" width="1000" height="520"></canvas>
+    </div>
+
+    <div class="bottom-actions">
+      <input id="uploadCarpet" type="file" accept="image/*" style="display:none" />
+      <button id="uploadBtn" class="btn">Upload Carpet</button>
+      <button id="removeBtn" class="btn ghost">Remove Carpet</button>
+      <div style="margin-left:auto" class="muted">Drag • Scale • Rotate</div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar panel">
+    <div>
+      <div class="room-label">Choose a room</div>
+      <div class="thumbs" id="thumbs">
+        <!-- Thumbnails inserted here -->
+        <div class="thumb" data-src="https://drive.google.com/uc?export=view&id=11IqNokmYxlu_fT-7G2Wg0MWU6TtVnSUb"><img src="https://drive.google.com/uc?export=view&id=11IqNokmYxlu_fT-7G2Wg0MWU6TtVnSUb" alt="room1"></div>
+
+        <div class="thumb" data-src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=600&q=60" alt="room2"></div>
+
+        <div class="thumb" data-src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=600&q=60" alt="room3"></div>
+
+        <div class="thumb" data-src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=60" alt="room4"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="muted">Tips: Use top-down carpet images (PNG recommended). If Drive image is private, make it "Anyone with the link".</div>
+  </aside>
+
+  <footer>Made with CarpetVue — instant carpet previews</footer>
+</div>
 
 <script>
-    // Fabric.js Canvas
-    const canvas = new fabric.Canvas("workspace", {
-        preserveObjectStacking: true
+/* CarpetVue — robust final script */
+
+// Fabric + canvas init
+const canvas = new fabric.Canvas('roomCanvas', { selection: false, preserveObjectStacking: true });
+canvas.preserveObjectStacking = true;
+let carpet = null;
+let currentBackgroundURL = null;
+
+// helper: fetch image as blob and create object URL (avoids CORS tainting)
+async function setBackgroundFromURL(url){
+  try {
+    currentBackgroundURL = url;
+    // fetch the resource as a blob (works for Drive & many hosts)
+    const res = await fetch(url, {mode:'cors'}); // if this fails due permissions, we'll catch
+    if(!res.ok) throw new Error('Background fetch failed: ' + res.status);
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+
+    fabric.Image.fromURL(objUrl, img => {
+      // scale/position for cover
+      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+      img.set({ originX:'center', originY:'center', left: canvas.width/2, top: canvas.height/2, selectable:false, evented:false });
+      img.scale(scale);
+      canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+      // revoke after small delay to ensure fabric has used it
+      setTimeout(()=> URL.revokeObjectURL(objUrl), 2000);
+    }, { crossOrigin: 'anonymous' });
+
+  } catch (err) {
+    console.error("Background load error for", url, err);
+    // fallback: try direct set (may fail with CORS)
+    try {
+      fabric.Image.fromURL(url, img=>{
+        const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+        img.set({ originX:'center', originY:'center', left: canvas.width/2, top: canvas.height/2, selectable:false, evented:false });
+        img.scale(scale);
+        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+      }, { crossOrigin:'anonymous' });
+    } catch(e){
+      console.error("Fallback background also failed", e);
+      alert("Unable to load background image (check sharing/URL). See console for details.");
+    }
+  }
+}
+
+// initial background: first thumb
+setBackgroundFromURL(document.querySelector('.thumb').dataset.src);
+
+// thumbnail click
+document.querySelectorAll('.thumb').forEach(t=>{
+  t.addEventListener('click', async () => {
+    document.querySelectorAll('.thumb').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const src = t.dataset.src;
+    await setBackgroundFromURL(src);
+  });
+});
+
+// responsive canvas sizing (keeps appearance tidy)
+function resizeCanvas(){
+  const stage = document.getElementById('canvasStage');
+  const rect = stage.getBoundingClientRect();
+  const w = Math.max(640, Math.min(1100, rect.width - 36));
+  canvas.setWidth(Math.floor(rect.width - 36));
+  canvas.setHeight(Math.floor(rect.height - 36));
+  canvas.calcOffset();
+  canvas.renderAll();
+}
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 200);
+
+// UPLOAD carpet: using objectURL for best performance
+const uploadInput = document.getElementById('uploadCarpet');
+document.getElementById('uploadBtn').addEventListener('click', ()=> uploadInput.click());
+
+uploadInput.addEventListener('change', e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const objUrl = URL.createObjectURL(file);
+
+  fabric.Image.fromURL(objUrl, img=>{
+    // style controls
+    img.set({
+      selectable:true,
+      hasControls:true,
+      cornerStyle:'circle',
+      cornerColor:'#3b82f6',
+      transparentCorners:false,
+      padding:6,
+      crossOrigin:'anonymous'
     });
 
-    let carpet = null;
+    // remove existing
+    if(carpet) canvas.remove(carpet);
 
-    // Upload button triggers input
-    const uploadInput = document.getElementById("uploadInput");
-    document.getElementById("uploadBtn").onclick = () => uploadInput.click();
+    carpet = img;
+    canvas.add(carpet);
 
-    // Handle Carpet Upload
-    uploadInput.addEventListener("change", e => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // fit to floor-ish area
+    const maxW = canvas.width * 0.7;
+    const maxH = canvas.height * 0.35;
+    const scale = Math.min(maxW / img.width, maxH / img.height, 1.0);
+    img.scale(scale);
+    img.set({ left: canvas.width/2, top: canvas.height * 0.72, originX:'center', originY:'center' });
 
-        const reader = new FileReader();
-        reader.onload = evt => {
+    canvas.setActiveObject(carpet);
+    canvas.requestRenderAll();
 
-            fabric.Image.fromURL(evt.target.result, img => {
-                img.set({
-                    selectable: true,
-                    hasControls: true,
-                    crossOrigin: "anonymous",
-                    cornerStyle: 'circle',
-                    cornerColor: '#3b82f6',
-                    transparentCorners: false,
-                    padding: 8
-                });
+    // release objectURL after small delay
+    setTimeout(()=> URL.revokeObjectURL(objUrl), 3000);
+  }, { crossOrigin:'anonymous' });
 
-                // Remove old carpet
-                if (carpet) canvas.remove(carpet);
+  // clear input value so same file can be re-selected later
+  uploadInput.value = '';
+});
 
-                carpet = img;
+// remove carpet button
+document.getElementById('removeBtn').addEventListener('click', ()=>{
+  if(carpet) {
+    canvas.remove(carpet);
+    carpet = null;
+    canvas.renderAll();
+  }
+});
 
-                // Auto scale carpet
-                const maxW = canvas.width * 0.8;
-                const maxH = canvas.height * 0.6;
-                const scale = Math.min(maxW / img.width, maxH / img.height);
-                img.scale(scale);
+// demo carpet
+document.getElementById('demoBtn').addEventListener('click', ()=>{
+  const demo = 'https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1200&q=60';
+  fabric.Image.fromURL(demo, img=>{
+    if(carpet) canvas.remove(carpet);
+    carpet = img;
+    canvas.add(carpet);
+    const maxW = canvas.width * 0.7;
+    const maxH = canvas.height * 0.35;
+    const scale = Math.min(maxW / img.width, maxH / img.height, 1.0);
+    img.scale(scale);
+    img.set({ left: canvas.width/2, top: canvas.height * 0.72, originX:'center', originY:'center' });
+    canvas.setActiveObject(carpet);
+    canvas.requestRenderAll();
+  }, { crossOrigin:'anonymous' });
+});
 
-                img.set({
-                    left: canvas.width / 2,
-                    top: canvas.height * 0.65,
-                    originX: 'center',
-                    originY: 'center'
-                });
+// download/export
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  try {
+    // hide selection controls for clean export
+    const active = canvas.getActiveObject();
+    let hadActive = false;
+    if(active){ hadActive = true; active.set('active', false); }
+    canvas.discardActiveObject();
+    canvas.renderAll();
 
-                canvas.add(carpet);
-                canvas.setActiveObject(carpet);
-                canvas.renderAll();
+    const data = canvas.toDataURL({ format:'png', multiplier:2, enableRetinaScaling:true });
 
-            }, { crossOrigin: "anonymous" });
-        };
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = 'carpetvue_preview.png';
+    a.click();
 
-        reader.readAsDataURL(file);
-    });
+    // restore selection if needed
+    if(hadActive && active){ canvas.setActiveObject(active); canvas.requestRenderAll(); }
+  } catch (err) {
+    console.error('Export failed', err);
+    alert('Export failed (see console). This usually happens if an image used blocked CORS or is private.');
+  }
+});
 
-    // Clear carpet
-    document.getElementById("clearBtn").onclick = () => {
-        if (carpet) {
-            canvas.remove(carpet);
-            carpet = null;
-            canvas.renderAll();
-        }
-    };
-
-    // Download image
-    document.getElementById("downloadBtn").onclick = () => {
-        const url = canvas.toDataURL("image/png");
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "CarpetVue_Result.png";
-        a.click();
-    };
+// helpful console info for Drive permission issues
+(function checkDriveThumbs(){
+  const first = document.querySelector('.thumb');
+  const url = first && first.dataset && first.dataset.src;
+  if(url && url.includes('drive.google.com')){
+    console.log('Drive image detected. Make sure the Drive file is shared "Anyone with the link". If the image fails to load, change Drive sharing settings.');
+  }
+})();
 </script>
-
 </body>
 </html>
