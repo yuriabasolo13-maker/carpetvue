@@ -1,247 +1,341 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CarpetVue – Visualizer (A1 Simple)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CarpetVue — Instant Carpet Visualizer</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#2563eb; --muted:#94a3b8; --glass: rgba(255,255,255,0.04);
+      --maxw:1100px; --radius:14px;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      color: #e6eef8;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#071021 0%, #071827 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:36px}
+    .wrap{width:100%;max-width:var(--maxw)}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;gap:14px;align-items:center}
+    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
 
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #ffffff;
-    color: #000;
-    display: flex;
-    height: 100vh;
-  }
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:22px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
 
-  /* LEFT PANEL */
-  .sidebar {
-    width: 280px;
-    background: #ffffff;
-    border-right: 1px solid #ddd;
-    padding: 20px;
-    overflow-y: auto;
-  }
+    /* Visualizer area */
+    .visualizer{height:640px;display:flex;flex-direction:column}
+    .canvas-wrap{flex:1;background:linear-gradient(180deg,#0b1520,#071021);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:14px;border:1px solid rgba(255,255,255,0.03)}
+    #roomCanvas{width:100%;height:100%;border-radius:8px;background-image:url('');background-size:cover;background-position:center}
 
-  .sidebar h2 {
-    font-size: 22px;
-    margin-bottom: 15px;
-    text-align: center;
-  }
+    .controls{margin-top:12px;display:flex;gap:8px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;background:var(--accent);border:none;color:white;cursor:pointer;box-shadow:0 6px 12px rgba(37,99,235,0.14);}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .small{padding:8px 10px;font-size:13px}
 
-  .sidebar input[type=file] {
-    width: 100%;
-    margin-bottom: 12px;
-    padding: 10px;
-    background: #4db8ff;
-    color: black;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
+    /* Right panel */
+    .panel{display:flex;flex-direction:column;gap:12px}
+    .thumbs{display:grid;grid-template-columns:repeat(1,1fr);gap:8px}
+    .thumb{height:84px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 
-  .thumbs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 20px;
-  }
+    .meta{font-size:13px;color:var(--muted)}
+    .price{background:linear-gradient(90deg,#06b6d4,#60a5fa);padding:8px;border-radius:8px;font-weight:600;color:#02243e}
 
-  .thumbs img {
-    width: 100%;
-    height: 65px;
-    object-fit: cover;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+    /* Sections */
+    section{margin-top:18px}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .feature{padding:12px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.02)}
 
-  label {
-    font-size: 14px;
-    display: block;
-    margin-bottom: 4px;
-  }
+    footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
 
-  .sidebar input[type=range] {
-    width: 100%;
-    margin-bottom: 18px;
-  }
-
-  button {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    background: #4db8ff;
-    color: black;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 15px;
-  }
-
-  button:hover {
-    opacity: 0.85;
-  }
-
-  /* CANVAS AREA */
-  .canvas-wrap {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fafafa;
-  }
-
-  canvas {
-    max-width: 95%;
-    max-height: 95%;
-    border: 1px solid #ccc;
-  }
-</style>
+    /* Responsive */
+    @media (max-width:980px){.grid{grid-template-columns:1fr} .visualizer{height:520px} .panel{order:3}}
+  </style>
+  <!-- Fabric.js for canvas interaction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">CV</div>
+        <div>
+          <h1>CarpetVue — Instant Carpet Visualizer</h1>
+          <p class="lead">Upload your carpet design and see it in real rooms. Fast previews, HD exports, and subscription plans for shops.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn small" id="tryDemo">Try Demo</button>
+        <a class="btn small" href="#pricing">Pricing</a>
+      </div>
+    </header>
 
-<div class="sidebar">
-  <h2>CarpetVue</h2>
+    <main class="grid">
+      <div class="card visualizer">
+        <!-- Visualizer canvas area -->
+        <div class="canvas-wrap card" id="canvasCard">
+          <canvas id="roomCanvas" width="860" height="480"></canvas>
+        </div>
 
-  <input type="file" id="roomUpload" accept="image/*" value="">
-  <input type="file" id="carpetUpload" accept="image/*" value="">
+        <div class="controls">
+          <label style="display:inline-flex;align-items:center;gap:8px">
+            <input type="file" id="uploadCarpet" accept="image/*" style="display:none">
+            <button class="btn" id="uploadBtn">Upload Carpet</button>
+          </label>
 
-  <div class="thumbs">
-    <img src="https://i.imgur.com/jDxHH9g.jpeg" class="sampleRoom">
-    <img src="https://i.imgur.com/PG6LI9f.jpeg" class="sampleRoom">
-    <img src="https://i.imgur.com/xYgRqI4.jpeg" class="sampleRoom">
-    <img src="https://i.imgur.com/VyqE2if.jpeg" class="sampleRoom">
+          <button class="btn secondary" id="resetBtn">Reset</button>
+          <button class="btn" id="downloadBtn">Download Preview</button>
+
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <div class="meta">Preview: <strong id="previewSize">Low</strong></div>
+            <button class="btn small" id="buyHD">Buy HD</button>
+          </div>
+        </div>
+
+        <section>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">How it works</div>
+            <div class="meta">Free preview, pay for HD</div>
+          </div>
+          <div class="cols" style="margin-top:12px">
+            <div class="feature">1. Upload your carpet JPG/PNG.</div>
+            <div class="feature">2. Drag, scale, rotate and skew to match floor perspective.</div>
+            <div class="feature">3. Download or purchase HD export instantly.</div>
+            <div class="feature">Pro tip: use top-down carpet photos for best results.</div>
+          </div>
+        </section>
+
+      </div>
+
+      <aside class="panel">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700">Choose a Room</div>
+              <div class="meta">Click a thumbnail to load a room background</div>
+            </div>
+            <div class="price">Free Preview</div>
+          </div>
+
+          <div class="thumbs" style="margin-top:10px">
+            <div class="thumb" data-src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=600&q=60" alt="room1"></div>
+            <div class="thumb" data-src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=600&q=60" alt="room2"></div>
+            <div class="thumb" data-src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=60" alt="room3"></div>
+            <div class="thumb" data-src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=60"><img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=60" alt="room4"></div>
+          </div>
+
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700">Pricing</div>
+          <div class="meta" style="margin-top:8px">Free preview — instant HD exports available</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div>
+              <div style="font-weight:700">HD Export</div>
+              <div class="meta">High quality download, corrected shadows</div>
+            </div>
+            <div style="font-weight:700">10 AED</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div>
+              <div style="font-weight:700">Pro Pack</div>
+              <div class="meta">3 HD renders + color correction</div>
+            </div>
+            <div style="font-weight:700">50 AED</div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" id="subscribeBtn">Subscribe</button>
+            <button class="btn secondary" id="contactBtn">Contact</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700">Tips for best results</div>
+          <ul class="meta" style="margin:8px 0 0 18px;line-height:1.6;color:var(--muted)">
+            <li>Use a top-down photo of the carpet if possible</li>
+            <li>High resolution images produce better renders</li>
+            <li>Use PNG for transparent mats</li>
+          </ul>
+        </div>
+
+      </aside>
+
+    </main>
+
+    <section class="card" id="beforeAfter" style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">Before & After</div>
+        <div class="meta">Real examples — realistic shadows</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=900&q=60" style="width:49%;border-radius:8px" />
+        <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=60" style="width:49%;border-radius:8px" />
+      </div>
+    </section>
+
+    <section class="card" id="pricing">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">Pricing & Plans</div>
+        <div class="meta">Simple pricing for designers and shops</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))">
+          <div style="font-weight:700">Free</div>
+          <div class="meta">Low-res preview, watermarked</div>
+        </div>
+        <div style="flex:1;min-width:220px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(6,182,212,0.06),rgba(96,165,250,0.04));border:1px solid rgba(6,182,212,0.06)">
+          <div style="font-weight:700">Pay-Per-Render</div>
+          <div class="meta">10 AED per HD download</div>
+        </div>
+        <div style="flex:1;min-width:220px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(16,185,129,0.02),rgba(34,197,94,0.02))">
+          <div style="font-weight:700">Pro</div>
+          <div class="meta">$19/month — unlimited previews + discounts</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>Made with ❤️ by CarpetVue · Contact: yourname@carpetvue.com</div>
+    </footer>
+
   </div>
 
-  <label>Scale</label>
-  <input type="range" id="scaleSlider" min="0.3" max="3" step="0.01" value="1">
+  <script>
+    // Fabric.js canvas setup
+    const canvasEl = document.getElementById('roomCanvas');
+    const canvas = new fabric.Canvas('roomCanvas', { selection: false, preserveObjectStacking: true });
+    // initial background
+    const defaultBackground = 'https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60';
+    canvas.setBackgroundImage(defaultBackground, canvas.renderAll.bind(canvas), {originX: 'center', originY: 'center', width: canvas.getWidth(), height: canvas.getHeight()});
 
-  <label>Rotate</label>
-  <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
+    // helpers
+    function fitImageToCanvas(imgObj){
+      const scale = Math.max(canvas.width / imgObj.width, canvas.height / imgObj.height);
+      imgObj.set({left: canvas.width/2, top: canvas.height/2, originX:'center', originY:'center'});
+      imgObj.scaleToWidth(canvas.width*0.9);
+      canvas.renderAll();
+    }
 
-  <button id="resetBtn">Reset</button>
-  <button id="downloadBtn">Download</button>
-</div>
+    // placeholder carpet area (rounded rectangle) to help users place carpet — user image will be put above it
+    const placeholder = new fabric.Rect({ left: canvas.width/2 - 260, top: canvas.height/2 + 40, width:520, height:160, fill:'rgba(0,0,0,0.35)', rx:10, ry:10, selectable:false, evented:false });
+    canvas.add(placeholder);
 
-<div class="canvas-wrap">
-  <canvas id="canvas"></canvas>
-</div>
+    // store the currently added carpet image object
+    let carpetImg = null;
 
-<script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+    // upload flow
+    document.getElementById('uploadBtn').addEventListener('click', ()=> document.getElementById('uploadCarpet').click());
+    document.getElementById('uploadCarpet').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const data = await readFileAsDataURL(file);
+      fabric.Image.fromURL(data, function(img){
+        // remove old
+        if(carpetImg) canvas.remove(carpetImg);
+        // scale and place on placeholder
+        const maxW = placeholder.width*0.95;
+        img.set({left:placeholder.left + placeholder.width/2, top:placeholder.top + placeholder.height/2, originX:'center', originY:'center'});
+        img.scaleToWidth(maxW);
+        img.set({cornerStyle:'circle', cornerColor:'#2563eb', transparentCorners:false, padding:6});
+        // allow skew for perspective look
+        img.setControlsVisibility({ mt:false, mb:false, ml:false, mr:false, bl:true, br:true, tl:true, tr:true, mtr:true });
+        carpetImg = img;
+        canvas.add(img);
+        canvas.setActiveObject(img);
+      });
+    });
 
-let roomImg = new Image();
-let carpetImg = new Image();
+    function readFileAsDataURL(file){
+      return new Promise((res, rej)=>{
+        const fr = new FileReader();
+        fr.onload = ()=> res(fr.result);
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+    }
 
-let carpetScale = 1;
-let carpetRotation = 0;
-let carpetX = 300;
-let carpetY = 300;
+    // download preview
+    document.getElementById('downloadBtn').addEventListener('click', ()=>{
+      // temporarily hide placeholder
+      const prev = placeholder.visible;
+      placeholder.visible = false;
+      canvas.renderAll();
+      const dataURL = canvas.toDataURL({format:'png', quality:0.9});
+      placeholder.visible = prev;
+      downloadURI(dataURL, 'carpetvue_preview.png');
+    });
 
-let dragging = false;
-let offsetX = 0;
-let offsetY = 0;
+    function downloadURI(uri, name){
+      const link = document.createElement('a');
+      link.download = name;
+      link.href = uri;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
 
-/* DRAW FUNCTION */
-function draw() {
-  if (!roomImg.src) return;
+    // reset
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(carpetImg) canvas.remove(carpetImg);
+      carpetImg = null;
+      canvas.renderAll();
+    });
 
-  canvas.width = roomImg.width;
-  canvas.height = roomImg.height;
+    // Buy HD (placeholder behaviour)
+    document.getElementById('buyHD').addEventListener('click', ()=>{
+      alert('HD export is a paid service. This demo will download a low-res preview. I can help you add a real payment gateway (PayPal/Stripe) and deliver HD images by email.');
+    });
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // thumbnail room switching
+    document.querySelectorAll('.thumb').forEach(t=>{
+      t.addEventListener('click', ()=>{
+        const src = t.getAttribute('data-src');
+        canvas.setBackgroundImage(src, canvas.renderAll.bind(canvas), {originX: 'center', originY: 'center', width: canvas.getWidth(), height: canvas.getHeight()});
+      });
+    });
 
-  ctx.drawImage(roomImg, 0, 0, canvas.width, canvas.height);
+    // Try demo: load a sample carpet image automatically
+    document.getElementById('tryDemo').addEventListener('click', ()=>{
+      const sample = 'https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1200&q=60';
+      fabric.Image.fromURL(sample, function(img){
+        if(carpetImg) canvas.remove(carpetImg);
+        img.set({left:placeholder.left + placeholder.width/2, top:placeholder.top + placeholder.height/2, originX:'center', originY:'center'});
+        img.scaleToWidth(placeholder.width*0.95);
+        img.set({cornerStyle:'circle', cornerColor:'#2563eb', transparentCorners:false});
+        carpetImg = img; canvas.add(img); canvas.setActiveObject(img);
+      });
+    });
 
-  if (carpetImg.src) {
-    ctx.save();
-    ctx.translate(carpetX, carpetY);
-    ctx.rotate(carpetRotation * Math.PI / 180);
-    ctx.scale(carpetScale, carpetScale);
-    ctx.drawImage(carpetImg, -carpetImg.width / 2, -carpetImg.height / 2);
-    ctx.restore();
-  }
-}
+    // helper: download name
+    function setPreviewLabel(size){ document.getElementById('previewSize').innerText = size; }
+    setPreviewLabel('Low');
 
-/* ROOM THUMBNAILS */
-document.querySelectorAll(".sampleRoom").forEach(img => {
-  img.addEventListener("click", () => {
-    roomImg = new Image();
-    roomImg.onload = draw;
-    roomImg.src = img.src;
-  });
-});
+    // contact button
+    document.getElementById('contactBtn').addEventListener('click', ()=>{
+      window.location.href = 'mailto:yourname@carpetvue.com?subject=CarpetVue%20Customizer';
+    });
 
-/* UPLOAD ROOM */
-document.getElementById("roomUpload").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  roomImg = new Image();
-  roomImg.onload = draw;
-  roomImg.src = url;
-});
+    // subscribe placeholder
+    document.getElementById('subscribeBtn').addEventListener('click', ()=>{
+      alert('Subscription purchase placeholder. I can configure Stripe/PayPal integration for you.');
+    });
 
-/* UPLOAD CARPET */
-document.getElementById("carpetUpload").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  carpetImg = new Image();
-  carpetImg.onload = draw;
-  carpetImg.src = url;
-});
+    // make canvas responsive
+    function resizeCanvas(){
+      const parent = canvasEl.parentElement;
+      const w = parent.clientWidth - 28;
+      const h = Math.max(380, window.innerHeight * 0.45);
+      canvas.setWidth(w);
+      canvas.setHeight(h);
+      // reposition placeholder
+      placeholder.set({left:w/2 - 260, top:h/2 + 40});
+      canvas.renderAll();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-/* SCALE */
-document.getElementById("scaleSlider").oninput = e => {
-  carpetScale = e.target.value;
-  draw();
-};
-
-/* ROTATE */
-document.getElementById("rotateSlider").oninput = e => {
-  carpetRotation = e.target.value;
-  draw();
-};
-
-/* DRAG CARPET */
-canvas.addEventListener("mousedown", e => {
-  dragging = true;
-  offsetX = e.offsetX - carpetX;
-  offsetY = e.offsetY - carpetY;
-});
-
-canvas.addEventListener("mousemove", e => {
-  if (dragging) {
-    carpetX = e.offsetX - offsetX;
-    carpetY = e.offsetY - offsetY;
-    draw();
-  }
-});
-
-canvas.addEventListener("mouseup", () => dragging = false);
-canvas.addEventListener("mouseleave", () => dragging = false);
-
-/* RESET */
-document.getElementById("resetBtn").addEventListener("click", () => {
-  carpetScale = 1;
-  carpetRotation = 0;
-  carpetX = canvas.width / 2;
-  carpetY = canvas.height / 2;
-  draw();
-});
-
-/* DOWNLOAD */
-document.getElementById("downloadBtn").addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.download = "carpetvue_result.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-});
-</script>
-
+  </script>
 </body>
 </html>
