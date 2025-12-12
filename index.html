@@ -1,191 +1,97 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CarpetVue — Visualizer</title>
-  <meta name="description" content="CarpetVue - quick carpet visualizer. Upload carpet + place it inside room photos, then download preview.">
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-
-  <!-- Fabric.js -->
-  <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#071226; --card:#0b1220; --muted:#9aa8bf; --accent:#3b82f6;
-      --radius:12px; --maxw:1100px;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-      color: #e8f1ff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#06111b 0%, #061826 100%);min-height:100vh;display:flex;justify-content:center;padding:28px}
-    .wrap{width:100%;max-width:var(--maxw)}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-    .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
-    h1{margin:0;font-size:18px}
-    p.lead{margin:0;color:var(--muted);font-size:13px}
-
-    main{display:grid;grid-template-columns:1fr 300px;gap:20px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:14px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
-    .canvas-shell{display:flex;flex-direction:column;gap:10px}
-    .canvas-frame{background:linear-gradient(180deg,#07121a,#06101a);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.02)}
-    canvas{display:block;border-radius:6px;background:#0f1724; width:100%; height:520px; touch-action:none}
-
-    .controls{display:flex;gap:8px;align-items:center}
-    .btn{background:var(--accent);border:none;color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer;box-shadow:0 6px 14px rgba(59,130,246,0.12)}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .muted{color:var(--muted);font-size:13px}
-
-    .thumbs{display:flex;flex-direction:column;gap:10px}
-    .thumb{height:84px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-
-    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
-
-    @media (max-width:980px){
-      main{grid-template-columns:1fr}
-      canvas{height:360px}
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CarpetVue - Online Carpet Visualizer | Try Your Design Instantly</title>
+<meta name="description" content="Visualize your carpet design in any room instantly. Upload, drag, and see how your custom carpet looks in real living spaces. Perfect for designers, shops, and clients." />
+<meta name="author" content="CarpetVue" />
+<meta property="og:title" content="CarpetVue - Online Carpet Visualizer" />
+<meta property="og:description" content="See how your custom carpet will look inside a real living room. Upload your design, drag it on the floor, and visualize your project in seconds—no Photoshop needed." />
+<meta property="og:type" content="website" />
+<style>
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial;background:#07101a;color:#e6eef8;padding:16px;}
+.app{display:grid;grid-template-columns:360px 1fr;gap:16px;max-width:1100px;margin:0 auto;}
+.card{background:rgba(255,255,255,0.02);padding:16px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6);}
+h1{margin:0 0 12px 0;font-size:18px;}
+label{display:block;font-size:12px;color:#94a3b8;margin-top:10px;}
+input[type=file]{width:100%;}
+.btn{display:inline-block;padding:8px 12px;border-radius:8px;border:0;background:#7c3aed;color:#fff;cursor:pointer;margin-top:10px;}
+.controls{gap:8px;}
+.range{width:100%;}
+.canvas-wrap{display:flex;align-items:center;justify-content:center;min-height:560px;border-radius:12px;overflow:hidden;background:#07101a;}
+canvas{max-width:100%;height:auto;display:block;}
+.thumbs{display:flex;gap:8px;margin-top:10px;}
+.thumbs img{height:60px;border-radius:8px;cursor:pointer;object-fit:cover;border:2px solid transparent;}
+.thumbs img.selected{border-color:#7c3aed;}
+.meta{font-size:12px;color:#94a3b8;margin-top:6px;}
+.row{display:flex;gap:8px;align-items:center;}
+.small{font-size:13px;}
+footer{margin-top:12px;font-size:12px;color:#94a3b8;}
+@media(max-width:880px){.app{grid-template-columns:1fr;}.canvas-wrap{min-height:420px}}
+</style>
 </head>
-
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo">CV</div>
-        <div>
-          <h1>CarpetVue — Visualizer</h1>
-          <p class="lead">Upload a carpet, place it on the floor, download a realistic preview.</p>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="tryDemo" class="btn ghost">Try Demo</button>
-        <a class="btn" id="downloadBtn">Download</a>
-      </div>
-    </header>
-
-    <main>
-      <div class="card canvas-shell">
-        <div class="canvas-frame card">
-          <canvas id="roomCanvas" width="1000" height="520"></canvas>
-        </div>
-
-        <div class="controls">
-          <input type="file" id="uploadCarpet" accept="image/*" style="display:none">
-          <button class="btn" id="uploadBtn">Upload Carpet</button>
-          <button class="btn ghost" id="resetBtn">Reset</button>
-        </div>
-      </div>
-
-      <aside class="card">
-        <div style="font-weight:700;margin-bottom:10px">Choose a room</div>
-        <div class="thumbs">
-
-          <div class="thumb" data-src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60">
-            <img src="https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=600&q=60">
-          </div>
-
-          <div class="thumb" data-src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=1200&q=60">
-            <img src="https://images.unsplash.com/photo-1505692794403-9f1a3f0c7d5a?auto=format&fit=crop&w=600&q=60">
-          </div>
-
-          <div class="thumb" data-src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=60">
-            <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=600&q=60">
-          </div>
-
-        </div>
-      </aside>
-    </main>
-
-    <footer>Made with ❤️ by CarpetVue</footer>
+<div class="app">
+  <div class="card">
+    <h1>CarpetVue - Controls</h1>
+    <label>1) Upload room photo</label>
+    <input id="roomFile" type="file" accept="image/*">
+    <label>2) Upload carpet/texture or pick a sample</label>
+    <input id="carpetFile" type="file" accept="image/*">
+    <div class="thumbs" id="sampleThumbs"></div>
+    <label>3) Position & transform</label>
+    <div class="controls">
+      <div class="row small"><span style="width:90px">X</span><input id="posX" class="range" type="range" min="-1000" max="1000" value="0"></div>
+      <div class="row small"><span style="width:90px">Y</span><input id="posY" class="range" type="range" min="-1000" max="1000" value="0"></div>
+      <div class="row small"><span style="width:90px">Scale</span><input id="scale" class="range" type="range" min="0.1" max="4" step="0.01" value="1"></div>
+      <div class="row small"><span style="width:90px">Rotate</span><input id="rotate" class="range" type="range" min="-180" max="180" value="0"></div>
+      <div class="row small"><span style="width:90px">Opacity</span><input id="opacity" class="range" type="range" min="0" max="1" step="0.01" value="1"></div>
+      <div class="row small"><span style="width:90px">Blend</span><select id="blendMode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="soft-light">Soft Light</option><option value="hard-light">Hard Light</option></select></div>
+    </div>
+    <label>4) Quick actions</label>
+    <div class="row"><button class="btn" id="fitCarpet">Fit carpet</button><button class="btn" id="centerCarpet">Center</button></div>
+    <div style="margin-top:12px"><button class="btn" id="downloadBtn">Download preview</button><button class="btn" id="resetBtn" style="background:#334155">Reset</button></div>
+    <div class="meta">Tip: click & drag the carpet on the preview to move it. Use sliders to fine-tune.</div>
+    <footer>Created for CarpetVue — save as <strong>index.html</strong> and open in a browser. Upload images from your computer.</footer>
   </div>
-
+  <div class="card canvas-wrap"><canvas id="stage" width="1200" height="800"></canvas></div>
+</div>
 <script>
-(function(){
-  const canvas = new fabric.Canvas("roomCanvas", { selection: false });
-  let carpet = null;
-
-  function setBackground(url){
-    fabric.Image.fromURL(url, img => {
-      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-      img.scale(scale);
-      img.set({ originX:"center", originY:"center", left:canvas.width/2, top:canvas.height/2, selectable:false });
-      canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-    }, { crossOrigin:"anonymous" });
-  }
-
-  setBackground("https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60");
-
-  function fitCarpet(img){
-    img.scaleToWidth(canvas.width * 0.6);
-    img.set({ left:canvas.width/2, top:canvas.height*0.70, originX:"center", originY:"center" });
-  }
-
-  // Upload Carpet
-  const uploadInput = document.getElementById("uploadCarpet");
-  document.getElementById("uploadBtn").onclick = () => uploadInput.click();
-
-  uploadInput.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if(!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(evt){
-      fabric.Image.fromURL(evt.target.result, img => {
-        img.set({ selectable:true, hasControls:true, crossOrigin:"anonymous" });
-        if(carpet) canvas.remove(carpet);
-        carpet = img;
-        canvas.add(img);
-        fitCarpet(img);
-        canvas.renderAll();
-      }, { crossOrigin:"anonymous" });
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Try Demo
-  document.getElementById("tryDemo").onclick = () => {
-    const demo = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=1200&q=60";
-    fabric.Image.fromURL(demo, img => {
-      if(carpet) canvas.remove(carpet);
-      carpet = img;
-      canvas.add(img);
-      fitCarpet(img);
-      canvas.renderAll();
-    }, { crossOrigin:"anonymous" });
-  };
-
-  // Room thumbnails
-  document.querySelectorAll(".thumb").forEach(t => {
-    t.onclick = () => setBackground(t.dataset.src);
-  });
-
-  // Reset carpet
-  document.getElementById("resetBtn").onclick = () => {
-    if(carpet) canvas.remove(carpet);
-    carpet = null;
-    canvas.renderAll();
-  };
-
-  // Download
-  document.getElementById("downloadBtn").onclick = () => {
-    try{
-      const url = canvas.toDataURL({ format:"png", multiplier:2, enableRetinaScaling:true });
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "carpetvue.png";
-      a.click();
-    }catch(e){
-      alert("Export failed (CORS). Check console.");
-      console.error(e);
-    }
-  };
-
-})();
+const el=id=>document.getElementById(id);
+const canvas=el('stage');
+const ctx=canvas.getContext('2d');
+let DPR=Math.max(1,window.devicePixelRatio||1);
+const state={roomImg:null,carpetImg:null,posX:0,posY:0,scale:1,rotate:0,opacity:1,blend:'source-over',dragging:false,dragOffset:{x:0,y:0}};
+const samples=[
+{title:'Maroon Stripes',data:'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#7b1f3a"/><rect x="0" y="0" width="800" height="100" fill="#f1d9c2"/><rect x="0" y="200" width="800" height="100" fill="#f1d9c2"/><rect x="0" y="400" width="800" height="100" fill="#f1d9c2"/></svg>')},
+{title:'Kilim',data:'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#b5651d"/><rect x="40" y="40" width="80" height="80" fill="#ffe5d1"/><rect x="140" y="140" width="80" height="80" fill="#ffe5d1"/><rect x="240" y="40" width="80" height="80" fill="#ffe5d1"/></svg>')},
+{title:'Green Geometric',data:'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#1f6f5a"/><rect x="40" y="40" width="80" height="80" fill="#d7f2e6"/><rect x="140" y="140" width="80" height="80" fill="#d7f2e6"/><rect x="240" y="40" width="80" height="80" fill="#d7f2e6"/></svg>')}
+];
+const thumbs=el('sampleThumbs');
+samples.forEach((s,i)=>{const img=new Image();img.src=s.data;img.title=s.title;img.addEventListener('click',()=>{selectSample(i)});thumbs.appendChild(img);});
+function selectSample(i){const imgs=thumbs.querySelectorAll('img');imgs.forEach(n=>n.classList.remove('selected'));thumbs.children[i].classList.add('selected');const img=new Image();img.onload=()=>{state.carpetImg=img;fitCarpetToCenter();render();};img.src=samples[i].data;}
+roomFile.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);const img=new Image();img.onload=()=>{state.roomImg=img;fitCanvasToRoom();render();URL.revokeObjectURL(url);};img.src=url;});
+carpetFile.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);const img=new Image();img.onload=()=>{state.carpetImg=img;fitCarpetToCenter();render();URL.revokeObjectURL(url);};img.src=url;});
+['posX','posY','scale','rotate','opacity','blendMode'].forEach(id=>{const node=el(id);node.addEventListener('input',()=>{if(id==='posX')state.posX=parseFloat(node.value);if(id==='posY')state.posY=parseFloat(node.value);if(id==='scale')state.scale=parseFloat(node.value);if(id==='rotate')state.rotate=parseFloat(node.value);if(id==='opacity')state.opacity=parseFloat(node.value);if(id==='blendMode')state.blend=node.value;render();});});
+el('fitCarpet').addEventListener('click',()=>{fitCarpetToFloor();render();});
+el('centerCarpet').addEventListener('click',()=>{fitCarpetToCenter();render();});
+el('resetBtn').addEventListener('click',resetAll);
+el('downloadBtn').addEventListener('click',()=>{const url=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download='carpet-preview.png';a.click();});
+function resetAll(){state.roomImg=null;state.carpetImg=null;state.posX=0;state.posY=0;state.scale=1;state.rotate=0;state.opacity=1;state.blend='source-over';roomFile.value='';carpetFile.value='';thumbs.querySelectorAll('img').forEach(n=>n.classList.remove('selected'));fitCanvasSize(1200,800);render();}
+function fitCanvasToRoom(){if(!state.roomImg)return;const w=Math.min(1400,state.roomImg.width);const h=Math.round(w*state.roomImg.height/state.roomImg.width);fitCanvasSize(w,h);}
+function fitCanvasSize(w,h){canvas.width=Math.round(w*DPR);canvas.height=Math.round(h*DPR);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0);}
+function fitCarpetToCenter(){if(!state.carpetImg)return;const cw=canvas.width/DPR;const ch=canvas.height/DPR;state.scale=Math.min((cw*0.6)/state.carpetImg.width,(ch*0.45)/state.carpetImg.height);state.posX=(cw-state.carpetImg.width*state.scale)/2;state.posY=(ch-state.carpetImg.height*state.scale)/2+ch*0.25;syncUI();}
+function fitCarpetToFloor(){if(!state.carpetImg||!state.roomImg)return;const cw=canvas.width/DPR;const ch=canvas.height/DPR;state.scale=Math.min((cw*0.9)/state.carpetImg.width,(ch*0.5)/state.carpetImg.height);state.posX=(cw-state.carpetImg.width*state.scale)/2;state.posY=ch*0.5;syncUI();}
+function syncUI(){el('posX').value=state.posX;el('posY').value=state.posY;el('scale').value=state.scale;el('rotate').value=state.rotate;el('opacity').value=state.opacity;el('blendMode').value=state.blend;}
+function clear(){ctx.clearRect(0,0,canvas.width,canvas.height);}
+function render(){clear();const cw=canvas.width/DPR;const ch=canvas.height/DPR;ctx.save();ctx.fillStyle='#07101a';ctx.fillRect(0,0,cw,ch);ctx.restore();if(state.roomImg){const r=fitRect(state.roomImg.width,state.roomImg.height,cw,ch);ctx.drawImage(state.roomImg,r.x,r.y,r.w,r.h);}if(state.carpetImg){ctx.save();ctx.globalAlpha=state.opacity;ctx.globalCompositeOperation=state.blend;const dx=state.posX;const dy=state.posY;const dw=state.carpetImg.width*state.scale;const dh=state.carpetImg.height*state.scale;ctx.translate(dx+dw/2,dy+dh/2);ctx.rotate(state.rotate*Math.PI/180);ctx.drawImage(state.carpetImg,-dw/2,-dh/2,dw,dh);ctx.restore();}}
+function fitRect(iw,ih,ow,oh){const ir=iw/ih;const or=ow/oh;let w,h,x=0,y=0;if(ir>or){w=ow;h=ow/ir;x=0;y=(oh-h)/2;}else{h=oh;w=oh*ir;x=(ow-w)/2;y=0;}return{x,y,w,h};}
+let isPointerDown=false;
+canvas.addEventListener('pointerdown',e=>{const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;if(!state.carpetImg)return;const cw=canvas.width/DPR;const ch=canvas.height/DPR;const dw=state.carpetImg.width*state.scale;const dh=state.carpetImg.height*state.scale;const cx=state.posX+dw/2;const cy=state.posY+dh/2;const angle=-state.rotate*Math.PI/180;const lx=Math.cos(angle)*(x-cx)-Math.sin(angle)*(y-cy)+dw/2;const ly=Math.sin(angle)*(x-cx)+Math.cos(angle)*(y-cy)+dh/2;if(lx>=0&&ly>=0&&lx<=dw&&ly<=dh){isPointerDown=true;canvas.setPointerCapture(e.pointerId);state.dragging=true;state.dragOffset.x=x-state.posX;state.dragOffset.y=y-state.posY;}});
+canvas.addEventListener('pointermove',e=>{if(!isPointerDown||!state.dragging)return;const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;state.posX=x-state.dragOffset.x;state.posY=y-state.dragOffset.y;syncUI();render();});
+canvas.addEventListener('pointerup',e=>{isPointerDown=false;state.dragging=false;try{canvas.releasePointerCapture(e.pointerId);}catch(e){}});
+fitCanvasSize(1200,800);render();
 </script>
-
 </body>
 </html>
