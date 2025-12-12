@@ -1,105 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CarpetVue – Minimal Carpet Visualizer</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarpetVue – Visualizer (A1 Simple)</title>
 
 <style>
   body {
-    font-family: Arial, sans-serif;
-    background: white;
     margin: 0;
-    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #ffffff;
     color: #000;
+    display: flex;
+    height: 100vh;
   }
 
-  h1 {
+  /* LEFT PANEL */
+  .sidebar {
+    width: 280px;
+    background: #ffffff;
+    border-right: 1px solid #ddd;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .sidebar h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
     text-align: center;
-    margin-bottom: 10px;
-    font-size: 26px;
   }
 
-  .controls {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  button, input[type=file] {
+  .sidebar input[type=file] {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px;
     background: #4db8ff;
     color: black;
     border: none;
-    padding: 10px 15px;
     border-radius: 6px;
-    margin: 6px;
     cursor: pointer;
+  }
+
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .thumbs img {
+    width: 100%;
+    height: 65px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  label {
     font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .sidebar input[type=range] {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #4db8ff;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
   }
 
   button:hover {
-    opacity: 0.8;
+    opacity: 0.85;
   }
 
-  .room-thumbs {
+  /* CANVAS AREA */
+  .canvas-wrap {
+    flex: 1;
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  }
-
-  .room-thumbs img {
-    width: 90px;
-    height: 60px;
-    object-fit: cover;
-    cursor: pointer;
-    border: 2px solid #ddd;
-    border-radius: 4px;
+    background: #fafafa;
   }
 
   canvas {
-    display: block;
-    margin: 20px auto;
-    max-width: 100%;
+    max-width: 95%;
+    max-height: 95%;
     border: 1px solid #ccc;
-  }
-
-  .sliders {
-    text-align: center;
-    margin-top: 10px;
-  }
-
-  .sliders input {
-    width: 60%;
   }
 </style>
 </head>
 <body>
 
-<h1>CarpetVue – Minimal Visualizer</h1>
+<div class="sidebar">
+  <h2>CarpetVue</h2>
 
-<div class="controls">
-  <input type="file" id="roomUpload" accept="image/*">
-  <input type="file" id="carpetUpload" accept="image/*">
+  <input type="file" id="roomUpload" accept="image/*" value="">
+  <input type="file" id="carpetUpload" accept="image/*" value="">
+
+  <div class="thumbs">
+    <img src="https://i.imgur.com/jDxHH9g.jpeg" class="sampleRoom">
+    <img src="https://i.imgur.com/PG6LI9f.jpeg" class="sampleRoom">
+    <img src="https://i.imgur.com/xYgRqI4.jpeg" class="sampleRoom">
+    <img src="https://i.imgur.com/VyqE2if.jpeg" class="sampleRoom">
+  </div>
+
+  <label>Scale</label>
+  <input type="range" id="scaleSlider" min="0.3" max="3" step="0.01" value="1">
+
+  <label>Rotate</label>
+  <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
+
   <button id="resetBtn">Reset</button>
   <button id="downloadBtn">Download</button>
 </div>
 
-<!-- Room Samples -->
-<div class="room-thumbs">
-  <img src="https://i.imgur.com/jDxHH9g.jpeg" class="sampleRoom">
-  <img src="https://i.imgur.com/PG6LI9v.jpeg" class="sampleRoom">
-  <img src="https://i.imgur.com/xYgRqI4.jpeg" class="sampleRoom">
-  <img src="https://i.imgur.com/VyqE2if.jpeg" class="sampleRoom">
-</div>
-
-<canvas id="canvas"></canvas>
-
-<div class="sliders">
-  <label>Scale: </label>
-  <input type="range" id="scaleSlider" min="0.2" max="3" step="0.01" value="1">
-  <br><br>
-  <label>Rotate: </label>
-  <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0">
+<div class="canvas-wrap">
+  <canvas id="canvas"></canvas>
 </div>
 
 <script>
@@ -111,15 +138,14 @@ let carpetImg = new Image();
 
 let carpetScale = 1;
 let carpetRotation = 0;
-
-let carpetX = 100;
-let carpetY = 100;
+let carpetX = 300;
+let carpetY = 300;
 
 let dragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
+let offsetX = 0;
+let offsetY = 0;
 
-/*** DRAW FUNCTION ***/
+/* DRAW FUNCTION */
 function draw() {
   if (!roomImg.src) return;
 
@@ -127,6 +153,7 @@ function draw() {
   canvas.height = roomImg.height;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   ctx.drawImage(roomImg, 0, 0, canvas.width, canvas.height);
 
   if (carpetImg.src) {
@@ -139,7 +166,7 @@ function draw() {
   }
 }
 
-/*** LOAD ROOM SAMPLE ***/
+/* ROOM THUMBNAILS */
 document.querySelectorAll(".sampleRoom").forEach(img => {
   img.addEventListener("click", () => {
     roomImg = new Image();
@@ -148,7 +175,7 @@ document.querySelectorAll(".sampleRoom").forEach(img => {
   });
 });
 
-/*** UPLOAD ROOM ***/
+/* UPLOAD ROOM */
 document.getElementById("roomUpload").addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -158,7 +185,7 @@ document.getElementById("roomUpload").addEventListener("change", e => {
   roomImg.src = url;
 });
 
-/*** UPLOAD CARPET ***/
+/* UPLOAD CARPET */
 document.getElementById("carpetUpload").addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -168,29 +195,29 @@ document.getElementById("carpetUpload").addEventListener("change", e => {
   carpetImg.src = url;
 });
 
-/*** SCALE ***/
-document.getElementById("scaleSlider").oninput = (e) => {
+/* SCALE */
+document.getElementById("scaleSlider").oninput = e => {
   carpetScale = e.target.value;
   draw();
 };
 
-/*** ROTATE ***/
-document.getElementById("rotateSlider").oninput = (e) => {
+/* ROTATE */
+document.getElementById("rotateSlider").oninput = e => {
   carpetRotation = e.target.value;
   draw();
 };
 
-/*** DRAGGING CARPET ***/
-canvas.addEventListener("mousedown", (e) => {
+/* DRAG CARPET */
+canvas.addEventListener("mousedown", e => {
   dragging = true;
-  dragOffsetX = e.offsetX - carpetX;
-  dragOffsetY = e.offsetY - carpetY;
+  offsetX = e.offsetX - carpetX;
+  offsetY = e.offsetY - carpetY;
 });
 
-canvas.addEventListener("mousemove", (e) => {
+canvas.addEventListener("mousemove", e => {
   if (dragging) {
-    carpetX = e.offsetX - dragOffsetX;
-    carpetY = e.offsetY - dragOffsetY;
+    carpetX = e.offsetX - offsetX;
+    carpetY = e.offsetY - offsetY;
     draw();
   }
 });
@@ -198,7 +225,7 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("mouseup", () => dragging = false);
 canvas.addEventListener("mouseleave", () => dragging = false);
 
-/*** RESET ***/
+/* RESET */
 document.getElementById("resetBtn").addEventListener("click", () => {
   carpetScale = 1;
   carpetRotation = 0;
@@ -207,11 +234,11 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   draw();
 });
 
-/*** DOWNLOAD ***/
+/* DOWNLOAD */
 document.getElementById("downloadBtn").addEventListener("click", () => {
   const link = document.createElement("a");
-  link.download = "carpetvue_output.png";
-  link.href = canvas.toDataURL();
+  link.download = "carpetvue_result.png";
+  link.href = canvas.toDataURL("image/png");
   link.click();
 });
 </script>
