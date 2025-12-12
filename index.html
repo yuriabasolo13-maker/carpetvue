@@ -37,7 +37,8 @@
   .canvas-wrap.dragover{border:2px dashed #2563eb;}
   @media (max-width:980px){.grid{grid-template-columns:1fr}.visualizer{height:520px}.panel{order:3}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
+<!-- Using jsdelivr instead of cdnjs to avoid tracking prevention -->
+<script src="https://cdn.jsdelivr.net/npm/fabric@4.6.0/dist/fabric.min.js"></script>
 </head>
 <body>
 
@@ -105,16 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  // Upload Carpet Button
+  // Upload Carpet
   const uploadInput = document.getElementById("uploadCarpet");
   document.getElementById("uploadBtn").addEventListener("click", () => uploadInput.click());
 
-  // Handle file input
-  function handleFile(file) {
+  function handleFile(file){
     const reader = new FileReader();
     reader.onload = () => {
       fabric.Image.fromURL(reader.result, (img) => {
-        if (carpetImg) canvas.remove(carpetImg);
+        if(carpetImg) canvas.remove(carpetImg);
         const scale = Math.min(canvas.width*0.6/img.width, canvas.height*0.6/img.height);
         img.set({left:canvas.width/2, top:canvas.height/2, originX:"center", originY:"center", scaleX:scale, scaleY:scale});
         carpetImg = img;
@@ -126,52 +126,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   uploadInput.addEventListener("change", (e) => {
-    if (e.target.files[0]) handleFile(e.target.files[0]);
+    if(e.target.files[0]) handleFile(e.target.files[0]);
   });
 
   // Drag & Drop
-  canvasWrap.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    canvasWrap.classList.add("dragover");
-  });
-  canvasWrap.addEventListener("dragleave", () => canvasWrap.classList.remove("dragover"));
-  canvasWrap.addEventListener("drop", (e) => {
-    e.preventDefault();
-    canvasWrap.classList.remove("dragover");
-    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-  });
+  canvasWrap.addEventListener("dragover", (e)=>{e.preventDefault(); canvasWrap.classList.add("dragover");});
+  canvasWrap.addEventListener("dragleave", ()=>canvasWrap.classList.remove("dragover"));
+  canvasWrap.addEventListener("drop", (e)=>{e.preventDefault(); canvasWrap.classList.remove("dragover"); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
 
   // Reset
-  document.getElementById("resetBtn").addEventListener("click", () => {
-    if (carpetImg) canvas.remove(carpetImg);
-    carpetImg = null;
-    canvas.renderAll();
-  });
+  document.getElementById("resetBtn").addEventListener("click", () => { if(carpetImg) canvas.remove(carpetImg); carpetImg=null; canvas.renderAll(); });
 
   // Download
   document.getElementById("downloadBtn").addEventListener("click", () => {
-    const link = document.createElement("a");
-    link.download = "carpetvue_preview.png";
-    link.href = canvas.toDataURL();
+    const link=document.createElement("a");
+    link.download="carpetvue_preview.png";
+    link.href=canvas.toDataURL();
     link.click();
   });
 
   // Room Thumbnails
-  document.querySelectorAll(".thumb").forEach((thumb) => {
-    thumb.addEventListener("click", () => {
-      const src = thumb.getAttribute("data-src");
+  document.querySelectorAll(".thumb").forEach(thumb=>{
+    thumb.addEventListener("click", ()=>{
+      const src=thumb.getAttribute("data-src");
       canvas.setBackgroundImage(src, canvas.renderAll.bind(canvas));
     });
   });
 
   // Try Demo
-  document.getElementById("tryDemo").addEventListener("click", () => {
-    const sample = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=800&q=60";
-    fabric.Image.fromURL(sample, (img) => {
-      if (carpetImg) canvas.remove(carpetImg);
-      const scale = Math.min(canvas.width*0.6/img.width, canvas.height*0.6/img.height);
+  document.getElementById("tryDemo").addEventListener("click", ()=>{
+    const sample="https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=800&q=60";
+    fabric.Image.fromURL(sample, (img)=>{
+      if(carpetImg) canvas.remove(carpetImg);
+      const scale=Math.min(canvas.width*0.6/img.width, canvas.height*0.6/img.height);
       img.set({left:canvas.width/2, top:canvas.height/2, originX:"center", originY:"center", scaleX:scale, scaleY:scale});
-      carpetImg = img;
+      carpetImg=img;
       canvas.add(img);
       canvas.setActiveObject(img);
     });
