@@ -10,32 +10,31 @@
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto;
     color: #e6eef8;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#071021 0%, #071827 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:36px}
-  .wrap{width:100%;max-width:var(--maxw)}
-
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-  .brand{display:flex;gap:14px;align-items:center}
-  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
-
-  .grid{display:grid;grid-template-columns:1fr 420px;gap:22px}
-  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:var(--radius);padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-  .visualizer{height:640px;display:flex;flex-direction:column}
-  .canvas-wrap{flex:1;background:#0b1520;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:14px;border:1px solid rgba(255,255,255,0.04)}
-  #roomCanvas{width:100%;height:100%;border-radius:8px}
-
-  .controls{margin-top:12px;display:flex;gap:8px;align-items:center}
-  .btn{padding:10px 14px;border-radius:10px;background:var(--accent);border:none;color:white;cursor:pointer;}
-  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  .small{padding:8px 10px;font-size:13px}
-
-  .panel{display:flex;flex-direction:column;gap:12px}
-  .thumbs{display:grid;grid-template-columns:1fr;gap:8px}
-  .thumb{height:84px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent}
-  .thumb img{width:100%;height:100%;object-fit:cover}
-
-  footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
-
+  *{box-sizing:border-box;}
+  body{margin:0; background:linear-gradient(180deg,#071021 0%, #071827 100%); min-height:100vh;
+       display:flex; align-items:flex-start; justify-content:center; padding:36px;}
+  .wrap{width:100%; max-width:1100px;}
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .brand{display:flex; gap:14px; align-items:center;}
+  .logo{width:64px; height:64px; border-radius:12px; background:linear-gradient(135deg,var(--accent),#7c3aed);
+         display:flex; align-items:center; justify-content:center; font-weight:700; color:white;}
+  .grid{display:grid; grid-template-columns:1fr 420px; gap:22px;}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+        border-radius:var(--radius); padding:18px; box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+  .visualizer{height:640px; display:flex; flex-direction:column;}
+  .canvas-wrap{flex:1; background:#0b1520; border-radius:10px; display:flex; align-items:center;
+               justify-content:center; padding:14px; border:1px solid rgba(255,255,255,0.04); position:relative;}
+  #roomCanvas{width:100%; height:100%; border-radius:8px;}
+  .controls{margin-top:12px; display:flex; gap:8px; align-items:center;}
+  .btn{padding:10px 14px; border-radius:10px; background:var(--accent); border:none; color:white; cursor:pointer;}
+  .btn.secondary{background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted);}
+  .small{padding:8px 10px; font-size:13px;}
+  .panel{display:flex; flex-direction:column; gap:12px;}
+  .thumbs{display:grid; grid-template-columns:1fr; gap:8px;}
+  .thumb{height:84px; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid transparent;}
+  .thumb img{width:100%; height:100%; object-fit:cover;}
+  footer{margin-top:20px; color:var(--muted); font-size:13px; text-align:center;}
+  .canvas-wrap.dragover{border:2px dashed #2563eb;}
   @media (max-width:980px){.grid{grid-template-columns:1fr}.visualizer{height:520px}.panel{order:3}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
@@ -58,7 +57,7 @@
   <main class="grid">
 
     <div class="card visualizer">
-      <div class="canvas-wrap">
+      <div class="canvas-wrap" id="canvasWrap">
         <canvas id="roomCanvas"></canvas>
       </div>
 
@@ -89,8 +88,8 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
   const canvasEl = document.getElementById("roomCanvas");
+  const canvasWrap = document.getElementById("canvasWrap");
   const canvas = new fabric.Canvas("roomCanvas", {selection:false, preserveObjectStacking:true});
   const defaultBg = "https://images.unsplash.com/photo-1549187774-b4e9a5b6f7f7?auto=format&fit=crop&w=1200&q=60";
   canvas.setBackgroundImage(defaultBg, canvas.renderAll.bind(canvas));
@@ -107,19 +106,16 @@ document.addEventListener("DOMContentLoaded", () => {
   resizeCanvas();
 
   // Upload Carpet Button
-  document.getElementById("uploadBtn").addEventListener("click", () => {
-    document.getElementById("uploadCarpet").click();
-  });
+  const uploadInput = document.getElementById("uploadCarpet");
+  document.getElementById("uploadBtn").addEventListener("click", () => uploadInput.click());
 
-  document.getElementById("uploadCarpet").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  // Handle file input
+  function handleFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
       fabric.Image.fromURL(reader.result, (img) => {
         if (carpetImg) canvas.remove(carpetImg);
-        const scale = Math.min(canvas.width * 0.6 / img.width, canvas.height * 0.6 / img.height);
+        const scale = Math.min(canvas.width*0.6/img.width, canvas.height*0.6/img.height);
         img.set({left:canvas.width/2, top:canvas.height/2, originX:"center", originY:"center", scaleX:scale, scaleY:scale});
         carpetImg = img;
         canvas.add(img);
@@ -127,6 +123,22 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     };
     reader.readAsDataURL(file);
+  }
+
+  uploadInput.addEventListener("change", (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  // Drag & Drop
+  canvasWrap.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    canvasWrap.classList.add("dragover");
+  });
+  canvasWrap.addEventListener("dragleave", () => canvasWrap.classList.remove("dragover"));
+  canvasWrap.addEventListener("drop", (e) => {
+    e.preventDefault();
+    canvasWrap.classList.remove("dragover");
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
   // Reset
@@ -157,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sample = "https://images.unsplash.com/photo-1606312611186-38a8f2d9f1d9?auto=format&fit=crop&w=800&q=60";
     fabric.Image.fromURL(sample, (img) => {
       if (carpetImg) canvas.remove(carpetImg);
-      const scale = Math.min(canvas.width * 0.6 / img.width, canvas.height * 0.6 / img.height);
+      const scale = Math.min(canvas.width*0.6/img.width, canvas.height*0.6/img.height);
       img.set({left:canvas.width/2, top:canvas.height/2, originX:"center", originY:"center", scaleX:scale, scaleY:scale});
       carpetImg = img;
       canvas.add(img);
